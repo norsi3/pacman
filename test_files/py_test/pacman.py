@@ -17,5 +17,14 @@ def pacman(input_file):
         2. final_pos_y (int) = final y location of Pacman
         3. coins_collected (int) = the number of coins that have been collected by Pacman across all movements
     """
-
+    return 0,0,0
     # return final_pos_x, final_pos_y, coins_collected 
+
+class Request:
+    _board_dimension = None
+    _initial_position = None
+    _movements = None
+    _walls = None
+    
+    def __init__():
+        return
