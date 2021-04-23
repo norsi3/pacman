@@ -25,14 +25,14 @@ class Request:
         rr = self._raw_req
         if not self.validateraw(rr):
             return self.ERROR
-        self._max = GridObject.coords(rr[0])
-        self._initial = GridObject.coords(rr[1])
-        self._moves = list(rr[2])
+        self._max = GridObject.coords(rr[0].strip())
+        self._initial = GridObject.coords(rr[1].strip())
+        self._moves = list(rr[2].strip())
         assert(len(self._moves)>0)
         self._walls = []
         if len(rr) > 3:
             for line in rr[3:]:
-                self._walls.append(GridObject.coords(line))
+                self._walls.append(GridObject.coords(line.strip()))
         return self
         
     def get_max_dim(self): return self._max
@@ -65,13 +65,6 @@ class GridObject:
     def coords(s):
         x,y=map(int, s.split(" "))
         return namedtuple("cell", ("x","y"))(x,y)
-
-    def out_of_bounds(self, c):
-        if (c.x < 0) or (c.y < 0): return False
-        elif (c.x > self.max_dim.x) or \
-            (c.y > self.max_dim.y):
-            return False
-        else: return not self.obstructed(c)
         
     @abstractclassmethod
     def obstructed(self, *args):

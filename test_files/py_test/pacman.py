@@ -25,15 +25,21 @@ def pacman(input_file):
     r = Request(input_file)
     b = Board(r.process_req())
     p = b.player
-    testing = True
+    testing = False
     if testing:
         return r.debug(p)
-    raise NotImplementedError
+    return p.pos.x, p.pos.y, p.coins
     # return final_pos_x, final_pos_y, coins_collected 
 
 class Board(GridObject):
     player = None
     wall_list = None
+    cardinals = {
+        "N": "0 1",
+        "S": "0 -1",
+        "W": "-1 0",
+        "E": "1 0"
+    }
     
     def __init__(self, req):
         self.max_dim = req.get_max_dim()
@@ -56,10 +62,10 @@ class Board(GridObject):
 
 class Player(GridObject):
     coins = 0
-    game_over = False
     movements = None
     pos = None
     wall_list = None
+    bounds = None
     
     def __init__(self, req):
         self.wall_list = req.get_walls()
@@ -67,22 +73,47 @@ class Player(GridObject):
         self.movements = req.get_moves()
         self.pos = req.get_initial_pos()
         
-    def act(self):
-        if self.game_over: return None
-        
+    def act(self):        
         while self.movements:
-            next_dest = self.movements.pop(0)
-            if self.move(self.pos, next_dest):
-                self.pos = next_dest
-                self.coin()
+            next_instruction = self.movements.pop(0)
             
-    def move(self, start, direction): 
+            if not self.is_direction(next_instruction): pass
+            
+            _next = self.coords(Board.cardinals[next_instruction])
+            target = self.look(_next)
+            
+            if self.move(target):
+                self.coin()
+    
+    def move(self, dest):
+        d = self.look(dest)
+        if self.out_of_bounds(d): 
+            return False
+        else: self.pos = d
+        return True        
+
+    def look(self, d):
+        x = self.pos.x + d.x
+        y = self.pos.y + d.y
+        return self.coords(f"{x} {y}")
         
-        return direction
+    def is_direction(self,d: str):
+        return Board.cardinals[d]
     
     def coin(self): self.coins += 1
     
     def balance(self): return self.coins
+    
+    def out_of_bounds(self, c):
+        if (c.x < 0) or (c.y < 0): 
+            return True
+        elif (c.x > self.bounds.x) or \
+            (c.y > self.bounds.y):
+            return True
+        else: return self.obstructed(c)
+
+    def obstructed(self, c): 
+        return c in self.wall_list
 
     def __str__(self):
         return(f"Player(coins={self.coins})")
