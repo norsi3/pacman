@@ -23,23 +23,24 @@ def pacman(input_file):
     """
     r = Request(input_file)
     b = Board(r.process_req())
+    p = b.player
     testing = True
     if testing:
-        return r.debug(b)
+        return r.debug(p)
     raise NotImplementedError
     # return final_pos_x, final_pos_y, coins_collected 
 
 class Board(GridObject):
     max_dim = None
     player = None
-    movements = None
     wall_list = None
     
     def __init__(self, req):
-        self.max_dim = req[0]
-        if req[3]: 
-            self.wall_list = req[3:]
-        self.player = self.createplayer(req[1],req[2])
+        self.max_dim = req.get_max_dim()
+        if req.get_walls():
+            self.wall_list = req.get_walls()
+        self.player = self.create_player(req.get_initial_pos(), req.get_moves())
+        
         return 
     
     def out_of_bounds(self, c):
@@ -51,25 +52,28 @@ class Board(GridObject):
         
     def obstructed(self, c): return c in self.wall_list
     
-    def createplayer(self, initial_pos, movements):
+    def create_player(self, initial_pos, movements):
         p = Player(initial_pos, movements)
-        assert(not p.loc in self.wall_list)
+        if self.wall_list:
+            assert(not p.loc in self.wall_list)
         return p
     
     def __str__(self):
-        return(f"Board({str(self.max_dim)},{self.movements},{self.wall_list})")
+        return(f"Board({str(self.max_dim)},{self.wall_list})")
 
 class Player(GridObject):
     coins = 0
     game_over = False
     movements = None
+    loc = None
     
     def __init__(self, cell, movements):
-        super()
+        self.loc = cell
         self.movements = movements
         
     def act(self):
-        if self.game_over: return
+        if self.game_over: return None
+        
         while self.movements:
             if self.move(self.movements.pop(0)):
                 self.coin()
@@ -79,4 +83,6 @@ class Player(GridObject):
     def coin(self): self.coins += 1
     
     def balance(self): return self.coins
-    
+
+    def __str__(self):
+        return(f"Player(movements={self.movements})")

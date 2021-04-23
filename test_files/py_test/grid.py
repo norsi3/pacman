@@ -7,8 +7,13 @@ from collections import namedtuple
 
 class Request:
     _raw_req = None
-    _final_req = None
+    
     ERROR = (-1, -1, 0)
+    
+    _max = None
+    _initial = None
+    _moves = None
+    _walls = None
     
     def __init__(self, file_name):
         if file_name:
@@ -19,17 +24,21 @@ class Request:
         rr = self._raw_req
         if not self.validateraw(rr):
             return self.ERROR
-        board_max_location = GridObject.coords(rr[0])
-        initial_position = GridObject.coords(rr[1])
-        movements = list(rr[2])
-        assert(len(movements)>0)
-        walls = []
+        self._max = GridObject.coords(rr[0])
+        self._initial = GridObject.coords(rr[1])
+        self._moves = list(rr[2])
+        assert(len(self._moves)>0)
+        self._walls = []
         if len(rr) > 3:
             for line in rr[3:]:
-                walls.append(GridObject.coords(line))
-        self._final_req = board_max_location, initial_position, movements, walls
-        return self._final_req
+                self._walls.append(GridObject.coords(line))
+        return self
         
+    def get_max_dim(self): return self._max
+    def get_initial_pos(self): return self._initial
+    def get_moves(self): return self._moves
+    def get_walls(self): return self._walls
+    
     @staticmethod
     def filerequest(f):
         with open(f, "r") as f:
