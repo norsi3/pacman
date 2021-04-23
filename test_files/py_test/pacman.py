@@ -6,7 +6,8 @@ __author__ = "Your Name"
 
 
 from collections import namedtuple
-from grid import GridObject,Request
+
+from grid import GridObject, Request
 
 
 def pacman(input_file):
@@ -31,7 +32,6 @@ def pacman(input_file):
     # return final_pos_x, final_pos_y, coins_collected 
 
 class Board(GridObject):
-    max_dim = None
     player = None
     wall_list = None
     
@@ -39,23 +39,16 @@ class Board(GridObject):
         self.max_dim = req.get_max_dim()
         if req.get_walls():
             self.wall_list = req.get_walls()
-        self.player = self.create_player(req.get_initial_pos(), req.get_moves())
-        
+        self.player = self.create_player(req)
+        self.player.act()
         return 
-    
-    def out_of_bounds(self, c):
-        if (c.x < 0) or (c.y < 0): return False
-        elif (c.x > self.max_dim.x) or \
-            (c.y > self.max_dim.y):
-            return False
-        else: return not self.obstructed(c)
         
     def obstructed(self, c): return c in self.wall_list
     
-    def create_player(self, initial_pos, movements):
-        p = Player(initial_pos, movements)
+    def create_player(self, req):
+        p = Player(req)
         if self.wall_list:
-            assert(not p.loc in self.wall_list)
+            assert(not p.pos in self.wall_list)
         return p
     
     def __str__(self):
@@ -65,24 +58,33 @@ class Player(GridObject):
     coins = 0
     game_over = False
     movements = None
-    loc = None
+    pos = None
+    wall_list = None
     
-    def __init__(self, cell, movements):
-        self.loc = cell
-        self.movements = movements
+    def __init__(self, req):
+        self.wall_list = req.get_walls()
+        self.bounds = req.get_max_dim()
+        self.movements = req.get_moves()
+        self.pos = req.get_initial_pos()
         
     def act(self):
         if self.game_over: return None
         
         while self.movements:
-            if self.move(self.movements.pop(0)):
+            next_dest = self.movements.pop(0)
+            if self.move(self.pos, next_dest):
+                self.pos = next_dest
                 self.coin()
             
-    def move(self, direction): return direction
+    def move(self, start, direction): 
+        
+        return direction
     
     def coin(self): self.coins += 1
     
     def balance(self): return self.coins
 
     def __str__(self):
-        return(f"Player(movements={self.movements})")
+        return(f"Player(coins={self.coins})")
+
+    

@@ -3,6 +3,7 @@ Write a module docstring here
 """
 
 __author__ = "Your Name"
+from abc import abstractclassmethod
 from collections import namedtuple
 
 class Request:
@@ -55,6 +56,7 @@ class Request:
         return [readout(x) for x in args]
 
 class GridObject:
+    max_dim = None
     loc = None
     def __init__(self,cell):
       self.loc = self.coords(cell)
@@ -64,5 +66,16 @@ class GridObject:
         x,y=map(int, s.split(" "))
         return namedtuple("cell", ("x","y"))(x,y)
 
+    def out_of_bounds(self, c):
+        if (c.x < 0) or (c.y < 0): return False
+        elif (c.x > self.max_dim.x) or \
+            (c.y > self.max_dim.y):
+            return False
+        else: return not self.obstructed(c)
+        
+    @abstractclassmethod
+    def obstructed(self, *args):
+        pass
+        
     def __str__(self):
         return f"{self.loc.x}, {self.loc.y})"
