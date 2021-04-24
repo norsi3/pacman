@@ -9,7 +9,7 @@ from collections import namedtuple
 class Request:
     _raw_req = None
     
-    ERROR = (-1, -1, 0)
+    ERROR = ("-1 -1", 0)
     
     _max = None
     _initial = None
@@ -58,6 +58,7 @@ class Request:
 class GridObject:
     max_dim = None
     loc = None
+    
     def __init__(self,cell):
       self.loc = self.coords(cell)
 
