@@ -43,7 +43,6 @@ class Board(GridObject):
         if req.get_walls():
             self.wall_list = req.get_walls()
         self.player = self.create_player(req)
-        print(f"player created: {self.player}")
         if not self.player.error:
             self.player.act()
         
@@ -55,13 +54,11 @@ class Board(GridObject):
     def create_player(self, req):
         p = Player(req)
         if p.error:
-            # print(f"aborted board ({p.abort}) of max size: {req.get_max_dim()}, the player visited {p.visited}. There were walls at {p.wall_list}.")
             p = self.bad_game(p)
         return p
     
     @staticmethod
     def bad_game(p):
-        print("aborted bad game")
         p.coins = 0
         p.loc = LOC_ERROR
         return p
@@ -95,24 +92,17 @@ class Player(GridObject):
                 
         while self.movements:
             next_instruction = self.movements.pop(0)
-            # print(f"next_instruction={next_instruction}")
             
             _next = self.coords(Board.cardinals[next_instruction])
             target = self.look(_next)
             
             if self.move(target):
                 if target not in self.visited:
-                    self.coin()
-                    # print(f"got a coin: total is {self.balance()}")
-                # else: print(f"I already gathered a coin from {target}.")
-                    
+                    self.coin()                    
                 self.visited.add(target) #includes repeat visits
 
-            # print(f"===   location is now {self.pos}   ===")
         if (not self.visited) or self.balance()<0:
-            # print(f"self.visited? {self.visited} and self.balance? {self.balance}")
             self.error = True
-        # print(f">>>>>>>I got {self.balance()} coins from visiting {len(self.visited)} cells, out of {self.original_movements_length} instructions. There were {len(self.wall_list)} walls.")
 
     def move(self, dest):
         if self.out_of_bounds(dest) or self.obstructed(dest): 
@@ -123,11 +113,9 @@ class Player(GridObject):
     def look(self, d):
         x = self.pos.x + d.x
         y = self.pos.y + d.y
-        print(f"starting at {self.pos}, facing {d} brings you to (x={x},y={y})")
         return self.coords(f"{x} {y}")
 
     def is_cardinal(self,d: str):
-        print(f"is_direction: {Board.cardinals[d]}, which is {bool(Board.cardinals[d])}")
         if Board.cardinals[d]:
             return Board.cardinals[d]
         else:
@@ -139,11 +127,9 @@ class Player(GridObject):
     
     def out_of_bounds(self, c):
         if (c.x < 0) or (c.y < 0): 
-            print(f"didn't move - {c} < (0,0)")
             return True
         elif ((c.x > self.bounds.x-1) or
               (c.y > self.bounds.y-1)):
-            print(f"didn't move - {c} > max {self.bounds}")
             return True
         return False
 
