@@ -7,32 +7,35 @@ from abc import abstractclassmethod
 from collections import namedtuple
 
 class Request:
-    _raw_req = None
-    
-    ERROR = ("-1 -1", 0)
-    
-    _max = None
-    _initial = None
-    _moves = None
-    _walls = None
-    
     def __init__(self, file_name):
+        self.fail = False
+        self.raw_req = None
+        self._max = None
+        self._initial = None
+        self._walls = None
+        self._moves = None
         if file_name:
             self._raw_req = self.filerequest(file_name)
         self.process_req()
-    
+        if self.fail:
+            self._initial = GridObject.coords("-1 -1")
+            self._max = GridObject.coords("0 0")
+
     def process_req(self):
         rr = self._raw_req
         if not self.validateraw(rr):
-            return self.ERROR
+            self.fail = True
+            return self
         self._max = GridObject.coords(rr[0].strip())
         self._initial = GridObject.coords(rr[1].strip())
         self._moves = list(rr[2].strip())
         assert(len(self._moves)>0)
-        self._walls = []
+        self._walls = set() #find in set is O(1) rather than find in list O(n)
         if len(rr) > 3:
             for line in rr[3:]:
-                self._walls.append(GridObject.coords(line.strip()))
+                line = line.strip()
+                if line:
+                    self._walls.add(GridObject.coords(line))
         return self
         
     def get_max_dim(self): return self._max
@@ -48,7 +51,7 @@ class Request:
 
     @staticmethod
     def validateraw(o):
-        return isinstance(o,list)
+        return o and isinstance(o,list)
     
     @staticmethod
     def debug(*args):
@@ -56,20 +59,12 @@ class Request:
         return [readout(x) for x in args]
 
 class GridObject:
-    max_dim = None
-    loc = None
-    
     def __init__(self,cell):
-      self.loc = self.coords(cell)
-
+      self.pos = self.coords(cell)
+    
     @staticmethod
     def coords(s):
         x,y=map(int, s.split(" "))
         return namedtuple("cell", ("x","y"))(x,y)
-        
-    @abstractclassmethod
-    def obstructed(self, *args):
-        pass
-        
     def __str__(self):
-        return f"{self.loc.x}, {self.loc.y})"
+        return f"({self.loc.x}, {self.loc.y})"

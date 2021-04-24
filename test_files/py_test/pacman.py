@@ -9,6 +9,7 @@ from collections import namedtuple
 
 from grid import GridObject, Request
 DEBUG = True
+LOC_ERROR = GridObject.coords("-1 -1")
 
 def pacman(input_file):
     """ Use this function to format your input/output arguments. Be sure not to change the order of the output arguments. 
@@ -37,62 +38,84 @@ class Board(GridObject):
     }
     
     def __init__(self, req):
+        
         self.max_dim = req.get_max_dim()
         if req.get_walls():
             self.wall_list = req.get_walls()
         self.player = self.create_player(req)
         print(f"player created: {self.player}")
-        self.player.act()
+        if not self.player.error:
+            self.player.act()
+        
+
         return 
         
     def obstructed(self, c): return c in self.wall_list
     
     def create_player(self, req):
         p = Player(req)
-        if self.wall_list:
-            assert(not p.pos in self.wall_list)
+        if p.error:
+            # print(f"aborted board ({p.abort}) of max size: {req.get_max_dim()}, the player visited {p.visited}. There were walls at {p.wall_list}.")
+            p = self.bad_game(p)
         return p
     
+    @staticmethod
+    def bad_game(p):
+        print("aborted bad game")
+        p.coins = 0
+        p.loc = LOC_ERROR
+        return p
+        
     def __str__(self):
-        return(f"Board({str(self.max_dim)},{self.wall_list})")
+        return(f"Board(max={str(self.max_dim)},walls={self.wall_list})")
 
 class Player(GridObject): 
     def __init__(self, req):
+        self.error = False
         self.wall_list = req.get_walls()
         self.bounds = req.get_max_dim()
         self.movements = req.get_moves()
         self.pos = req.get_initial_pos()
-        self.visited = []
+        self.visited = set([self.pos])
         self.coins = 0
-        self.original_movements_length = len(req.get_moves())
-        
-    def act(self):        
+        self.error = not self.valid_instructions()
+        if self.error:
+            self.pos = LOC_ERROR
+            self.coins = 0
+            
+    def valid_instructions(self):
+        if not self.movements: return False
+        for letter in self.movements:
+            if letter not in Board.cardinals.keys(): return False
+        for wall in self.wall_list:
+            if self.out_of_bounds(wall): return False
+        return not(self.out_of_bounds(self.pos) or self.obstructed(self.pos))
+    
+    def act(self):
+                
         while self.movements:
             next_instruction = self.movements.pop(0)
-            print(f"next_instruction={next_instruction}")
-            if not self.is_direction(next_instruction): pass
+            # print(f"next_instruction={next_instruction}")
             
             _next = self.coords(Board.cardinals[next_instruction])
             target = self.look(_next)
             
             if self.move(target):
-                if not target in self.visited:
+                if target not in self.visited:
                     self.coin()
-                    print(f"got a coin: total is {self.balance()}")
-                else:
-                    print(f"I already gathered a coin from {target}.")
+                    # print(f"got a coin: total is {self.balance()}")
+                # else: print(f"I already gathered a coin from {target}.")
                     
-                self.visited.append(target) #includes repeat visits
+                self.visited.add(target) #includes repeat visits
 
-                    
-            print(f"===   location is now {self.pos}   ===")
-        if len(self.visited) < 1 or self.balance()<1:
-            self.pos = super().coords(Request.ERROR[0])
-            self.coins = 0
-        print(f">>>>>>>I got {self.balance()} coins from visiting {len(self.visited)} cells, out of {self.original_movements_length} instructions. There were {len(self.wall_list)} walls.")
+            # print(f"===   location is now {self.pos}   ===")
+        if (not self.visited) or self.balance()<0:
+            # print(f"self.visited? {self.visited} and self.balance? {self.balance}")
+            self.error = True
+        # print(f">>>>>>>I got {self.balance()} coins from visiting {len(self.visited)} cells, out of {self.original_movements_length} instructions. There were {len(self.wall_list)} walls.")
 
     def move(self, dest):
-        if self.out_of_bounds(dest): 
+        if self.out_of_bounds(dest) or self.obstructed(dest): 
             return False
         else: self.pos = dest
         return True        
@@ -100,11 +123,11 @@ class Player(GridObject):
     def look(self, d):
         x = self.pos.x + d.x
         y = self.pos.y + d.y
-        print(f"looked at {self.pos} and direction {d} and got {x},{y}")
+        print(f"starting at {self.pos}, facing {d} brings you to (x={x},y={y})")
         return self.coords(f"{x} {y}")
 
-    def is_direction(self,d: str):
-        # print(f"is_direction: {Board.cardinals[d]}, which is {bool(Board.cardinals[d])}")
+    def is_cardinal(self,d: str):
+        print(f"is_direction: {Board.cardinals[d]}, which is {bool(Board.cardinals[d])}")
         if Board.cardinals[d]:
             return Board.cardinals[d]
         else:
@@ -118,19 +141,15 @@ class Player(GridObject):
         if (c.x < 0) or (c.y < 0): 
             print(f"didn't move - {c} < (0,0)")
             return True
-        elif (c.x > self.bounds.x-1) or \
-            (c.y > self.bounds.y-1):
+        elif ((c.x > self.bounds.x-1) or
+              (c.y > self.bounds.y-1)):
             print(f"didn't move - {c} > max {self.bounds}")
             return True
-        else: return self.obstructed(c)
+        return False
 
     def obstructed(self, c): 
-        if c in self.wall_list:
-            print(f"{c} is a wall, can\'t go there")
         return c in self.wall_list
 
     def __str__(self):
-        s=f"Player(coins={self.balance()}, visited={self.visited}, next_dir={self.movements[0]})"
+        s=f"Player(x={self.pos.x},y={self.pos.y},coins={self.balance()})"
         return s
-
-    
