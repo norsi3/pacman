@@ -1,9 +1,12 @@
 """
-Write a module docstring here
+    Request handling & grid class/object definitions
+
+Classes:
+    Request: receives request, validates and passes onto Board for processing
+    GridObject: standardizes coordinate handling, inherited by Board and Player
 """
 
-__author__ = "Your Name"
-from abc import abstractclassmethod
+__author__ = "Natalie Orsi"
 from collections import namedtuple
 
 class Request:
@@ -15,7 +18,7 @@ class Request:
         self._walls = None
         self._moves = None
         if file_name:
-            self._raw_req = self.filerequest(file_name)
+            self._raw_req = Request.filerequest(file_name)
         self.process_req()
         if self.fail:
             self._initial = GridObject.coords("-1 -1")
@@ -23,7 +26,7 @@ class Request:
 
     def process_req(self):
         rr = self._raw_req
-        if not self.validateraw(rr):
+        if not Request.validateraw(rr):
             self.fail = True
             return self
         self._max = GridObject.coords(rr[0].strip())

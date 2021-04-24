@@ -1,13 +1,17 @@
 """
-Write a module docstring here
+    Game logic
+
+Classes:
+    Board:  processes request and passes to player, creates 
+            and manages player instance
+    Player: plays game, keeps track of walls, coins, position
 """
 
-__author__ = "Your Name"
+__author__ = "Natalie Orsi"
 
-
-from collections import namedtuple
-
+from typing import final
 from grid import GridObject, Request
+
 DEBUG = True
 LOC_ERROR = GridObject.coords("-1 -1")
 
@@ -23,11 +27,13 @@ def pacman(input_file):
         2. final_pos_y (int) = final y location of Pacman
         3. coins_collected (int) = the number of coins that have been collected by Pacman across all movements
     """
-    r = Request(input_file)
-    b = Board(r.process_req())
-    p = b.player
-    return p.pos.x, p.pos.y, p.balance()
-    # return final_pos_x, final_pos_y, coins_collected 
+    r: Request = Request(input_file)
+    b: Board = Board(r.process_req())
+    p: Player = b.p
+    final_pos_x: int = p.pos.x
+    final_pos_y: int = p.pos.y
+    coins_collected: int = p.balance()
+    return final_pos_x, final_pos_y, coins_collected
 
 class Board(GridObject):
     cardinals = {
@@ -38,24 +44,16 @@ class Board(GridObject):
     }
     
     def __init__(self, req):
-        
-        self.max_dim = req.get_max_dim()
-        if req.get_walls():
-            self.wall_list = req.get_walls()
-        self.player = self.create_player(req)
-        if not self.player.error:
-            self.player.act()
-        
-
+        self.p: Player = self.create_player(req)
+        if not self.p.error:
+            self.p.act()
         return 
         
     def obstructed(self, c): return c in self.wall_list
     
     def create_player(self, req):
-        p = Player(req)
-        if p.error:
-            p = self.bad_game(p)
-        return p
+        p: Player = Player(req)
+        return Board.bad_game(p) if p.error else p
     
     @staticmethod
     def bad_game(p):
