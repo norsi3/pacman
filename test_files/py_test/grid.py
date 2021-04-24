@@ -21,9 +21,9 @@ class Request:
             self._raw_req = Request.filerequest(file_name)
         self.process_req()
         if self.fail:
-            self._initial = GridObject.coords("-1 -1")
-            self._max = GridObject.coords("0 0")
-
+            self._initial = GridObject.loc_error()
+            self._max = GridObject.loc_min()
+    
     def process_req(self):
         rr = self._raw_req
         if not Request.validateraw(rr):
@@ -33,7 +33,7 @@ class Request:
         self._initial = GridObject.coords(rr[1].strip())
         self._moves = list(rr[2].strip())
         assert(len(self._moves)>0)
-        self._walls = set() #find in set is O(1) rather than find in list O(n)
+        self._walls = set() # find in set is O(1) rather than using find in list, O(n)
         if len(rr) > 3:
             for line in rr[3:]:
                 line = line.strip()
@@ -56,12 +56,16 @@ class Request:
     def validateraw(o):
         return o and isinstance(o,list)
     
+    # left in if wanted for later convenience
     @staticmethod
     def debug(*args):
         readout = lambda x: f"{type(x).__name__}: {str(x)}"
         return [readout(x) for x in args]
 
 class GridObject:
+    # standardize how objects on a grid are referred to
+    # coords are namedtuples in the form cell(x=,y=)
+    
     def __init__(self,cell):
       self.pos = self.coords(cell)
     
@@ -71,3 +75,13 @@ class GridObject:
         return namedtuple("cell", ("x","y"))(x,y)
     def __str__(self):
         return f"({self.loc.x}, {self.loc.y})"
+    
+    @staticmethod
+    def loc_error():
+        # central location to configure error location, could
+        # instead come from a config text file/JSON
+        return GridObject.coords("-1 -1")
+    
+    @staticmethod
+    def loc_min():
+        return GridObject.coords("0 0")

@@ -9,11 +9,9 @@ Classes:
 
 __author__ = "Natalie Orsi"
 
-from typing import final
-from grid import GridObject, Request
+from grid import GridObject as GO, Request
 
-DEBUG = True
-LOC_ERROR = GridObject.coords("-1 -1")
+
 
 def pacman(input_file):
     """ Use this function to format your input/output arguments. Be sure not to change the order of the output arguments. 
@@ -35,7 +33,7 @@ def pacman(input_file):
     coins_collected: int = p.balance()
     return final_pos_x, final_pos_y, coins_collected
 
-class Board(GridObject):
+class Board(GO):
     cardinals = {
         "N": "0 1",
         "S": "0 -1",
@@ -49,7 +47,7 @@ class Board(GridObject):
             self.p.act()
         return 
         
-    def obstructed(self, c): return c in self.wall_list
+    def obstructed(self, cell): return cell in self.wall_list
     
     def create_player(self, req):
         p: Player = Player(req)
@@ -58,13 +56,13 @@ class Board(GridObject):
     @staticmethod
     def bad_game(p):
         p.coins = 0
-        p.loc = LOC_ERROR
+        p.loc = GO.loc_error()
         return p
         
     def __str__(self):
         return(f"Board(max={str(self.max_dim)},walls={self.wall_list})")
 
-class Player(GridObject): 
+class Player(GO): 
     def __init__(self, req):
         self.error = False
         self.wall_list = req.get_walls()
@@ -75,7 +73,7 @@ class Player(GridObject):
         self.coins = 0
         self.error = not self.valid_instructions()
         if self.error:
-            self.pos = LOC_ERROR
+            self.pos = GO.loc_error()
             self.coins = 0
             
     def valid_instructions(self):
